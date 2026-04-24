@@ -40,6 +40,18 @@ interface SessionItem {
   previewText: string
 }
 
+interface SessionRecord {
+  id: string
+  subject: string
+  created_at: string
+}
+
+interface SessionPreviewRecord {
+  session_id: string
+  content: string
+  created_at: string
+}
+
 const emptyStateIcons: Record<Subject, React.ComponentType<{ className?: string }>> = {
   maths: Calculator,
   science: FlaskConical,
@@ -222,8 +234,10 @@ export default function ChatPage() {
         return
       }
 
-      const filtered = sessions.filter(
-        (item) => item.subject === 'maths' || item.subject === 'science' || item.subject === 'english'
+      const typedSessions = sessions as SessionRecord[]
+      const filtered = typedSessions.filter(
+        (item: SessionRecord) =>
+          item.subject === 'maths' || item.subject === 'science' || item.subject === 'english'
       )
 
       if (!filtered.length) {
@@ -239,13 +253,13 @@ export default function ChatPage() {
         .order('created_at', { ascending: false })
 
       const previewMap = new Map<string, string>()
-      for (const msg of allMessages || []) {
+      for (const msg of (allMessages as SessionPreviewRecord[] | null) || []) {
         if (!previewMap.has(msg.session_id)) {
           previewMap.set(msg.session_id, msg.content)
         }
       }
 
-      const sessionItems: SessionItem[] = filtered.map((item) => ({
+      const sessionItems: SessionItem[] = filtered.map((item: SessionRecord) => ({
         id: item.id,
         subject: item.subject as Subject,
         createdAt: item.created_at,
