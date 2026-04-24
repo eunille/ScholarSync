@@ -18,6 +18,14 @@ interface GroqMessage {
   content: string
 }
 
+function hasGeminiProvider() {
+  return Boolean(process.env.GOOGLE_AI_API_KEY)
+}
+
+function hasGroqProvider() {
+  return Boolean(process.env.GROQ_API_KEY)
+}
+
 async function callGroqFallback(subject: Subject, messages: Message[]): Promise<string> {
   const groqKey = process.env.GROQ_API_KEY
   if (!groqKey) {
@@ -68,6 +76,10 @@ async function callGroqFallback(subject: Subject, messages: Message[]): Promise<
 }
 
 export async function chat(subject: Subject, messages: Message[]): Promise<string> {
+  if (!hasGeminiProvider() && !hasGroqProvider()) {
+    throw new Error('No AI provider is configured. Set GOOGLE_AI_API_KEY or GROQ_API_KEY.')
+  }
+
   const preferredModel = process.env.GOOGLE_AI_MODEL || DEFAULT_MODEL
   const modelCandidates = [preferredModel, ...FALLBACK_MODELS].filter(
     (value, index, self) => value && self.indexOf(value) === index

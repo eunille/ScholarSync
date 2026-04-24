@@ -420,6 +420,27 @@ export async function POST(request: NextRequest) {
     try {
       aiResponse = await chat(normalizedSubject, aiMessages)
     } catch (providerError) {
+      const providerMessage =
+        providerError instanceof Error
+          ? providerError.message
+          : 'AI service is temporarily unavailable'
+      const lowerProviderMessage = providerMessage.toLowerCase()
+
+      if (
+        lowerProviderMessage.includes('not configured') ||
+        lowerProviderMessage.includes('api key') ||
+        lowerProviderMessage.includes('unauthorized') ||
+        lowerProviderMessage.includes('invalid api key')
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'AI provider is not configured correctly. Add valid GOOGLE_AI_API_KEY or GROQ_API_KEY in deployment settings.',
+          },
+          { status: 503 }
+        )
+      }
+
       const fallbackReply =
         'I could not generate a response right now due to temporary AI limits. Please wait a bit and try again.'
 

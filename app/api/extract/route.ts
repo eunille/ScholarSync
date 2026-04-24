@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
 const MAX_EXTRACTED_TEXT_LENGTH = 12000
 
@@ -11,41 +13,28 @@ function truncateText(text: string) {
   return text.slice(0, MAX_EXTRACTED_TEXT_LENGTH)
 }
 
-async function loadOptionalModule(moduleName: string) {
-  try {
-    const dynamicImport = new Function(
-      'modulePath',
-      'return import(modulePath)'
-    ) as (modulePath: string) => Promise<any>
-
-    return await dynamicImport(moduleName)
-  } catch {
-    return null
-  }
-}
-
 async function parsePdf(buffer: Buffer) {
-  const pdfParseModule = await loadOptionalModule('pdf-parse')
-  if (!pdfParseModule) {
+  try {
+    const pdfParseModule = await import('pdf-parse')
+    const pdfParse = pdfParseModule.default as (input: Buffer) => Promise<{ text?: string }>
+    const parsed = await pdfParse(buffer)
+    return parsed.text ?? ''
+  } catch {
     throw new Error('PDF parsing dependency missing')
   }
-
-  const pdfParse = pdfParseModule.default as (input: Buffer) => Promise<{ text?: string }>
-  const parsed = await pdfParse(buffer)
-  return parsed.text ?? ''
 }
 
 async function parseDocx(buffer: Buffer) {
-  const mammothModule = await loadOptionalModule('mammoth')
-  if (!mammothModule) {
+  try {
+    const mammothModule = await import('mammoth')
+    const extractRawText = mammothModule.extractRawText as (options: {
+      buffer: Buffer
+    }) => Promise<{ value?: string }>
+    const result = await extractRawText({ buffer })
+    return result.value ?? ''
+  } catch {
     throw new Error('DOCX parsing dependency missing')
   }
-
-  const extractRawText = mammothModule.extractRawText as (options: {
-    buffer: Buffer
-  }) => Promise<{ value?: string }>
-  const result = await extractRawText({ buffer })
-  return result.value ?? ''
 }
 
 function parsePlainText(buffer: Buffer) {
