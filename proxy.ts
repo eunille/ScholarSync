@@ -1,10 +1,26 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+function hasSupabaseServerEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+  return Boolean(
+    url &&
+      anonKey &&
+      !url.includes('placeholder') &&
+      !anonKey.includes('placeholder')
+  )
+}
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
+
+  if (!hasSupabaseServerEnv()) {
+    return supabaseResponse
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

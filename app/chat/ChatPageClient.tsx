@@ -17,7 +17,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
+import { createClient, hasSupabaseBrowserEnv } from '@/lib/supabase'
 import { ChatMessage } from '@/components/ChatMessage'
 import { ChatInput } from '@/components/ChatInput'
 import type { Subject } from '@/lib/curriculum-prompts'
@@ -192,6 +192,12 @@ export default function ChatPage() {
   }, [])
 
   async function loadRecentSessions() {
+    if (!supabase || !hasSupabaseBrowserEnv()) {
+      setRecentSessions([])
+      setRecentLoading(false)
+      return
+    }
+
     setRecentLoading(true)
 
     try {
@@ -255,6 +261,11 @@ export default function ChatPage() {
   }
 
   async function loadSessionById(targetSessionId: string, targetSubject: Subject) {
+    if (!supabase) {
+      setHistoryError('Chat service is unavailable right now. Please refresh and try again.')
+      return
+    }
+
     setInitialLoading(true)
     setHistoryError('')
     setSessionActionError('')
@@ -482,7 +493,10 @@ export default function ChatPage() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
+
     router.push('/login')
     router.refresh()
   }

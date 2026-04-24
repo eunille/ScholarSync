@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, UserPlus } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
+import { createClient, hasSupabaseBrowserEnv } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
 const AUTH_UNAVAILABLE_MESSAGE =
@@ -13,15 +13,7 @@ const SIGNUP_CONFIRMATION_MESSAGE =
   'Account created. Please confirm your email before logging in.'
 
 function getSupabaseConfigError() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-
-  if (
-    !url ||
-    !anonKey ||
-    url.includes('placeholder') ||
-    anonKey.includes('placeholder')
-  ) {
+  if (!hasSupabaseBrowserEnv()) {
     return AUTH_UNAVAILABLE_MESSAGE
   }
 
@@ -59,6 +51,12 @@ export default function SignupPage() {
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
+      setLoading(false)
+      return
+    }
+
+    if (!supabase) {
+      setError(AUTH_UNAVAILABLE_MESSAGE)
       setLoading(false)
       return
     }

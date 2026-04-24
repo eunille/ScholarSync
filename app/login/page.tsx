@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, UserCircle2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
+import { createClient, hasSupabaseBrowserEnv } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
 const AUTH_UNAVAILABLE_MESSAGE =
@@ -13,15 +13,7 @@ const AUTH_EMAIL_CONFIRMATION_MESSAGE =
   'Please confirm your email before logging in. For demo mode, disable email confirmation in Supabase Auth settings.'
 
 function getSupabaseConfigError() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-
-  if (
-    !url ||
-    !anonKey ||
-    url.includes('placeholder') ||
-    anonKey.includes('placeholder')
-  ) {
+  if (!hasSupabaseBrowserEnv()) {
     return AUTH_UNAVAILABLE_MESSAGE
   }
 
@@ -44,6 +36,12 @@ export default function LoginPage() {
     const configError = getSupabaseConfigError()
     if (configError) {
       setError(configError)
+      setLoading(false)
+      return
+    }
+
+    if (!supabase) {
+      setError(AUTH_UNAVAILABLE_MESSAGE)
       setLoading(false)
       return
     }
