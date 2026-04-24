@@ -59,7 +59,8 @@ const emptyStateIcons: Record<Subject, React.ComponentType<{ className?: string 
 }
 
 function getSafeChatErrorMessage(raw: string) {
-  const message = raw.toLowerCase()
+  const trimmed = raw.trim()
+  const message = trimmed.toLowerCase()
 
   if (message.includes('unauthorized')) return 'Your session expired. Please log in again.'
 
@@ -72,21 +73,33 @@ function getSafeChatErrorMessage(raw: string) {
     return 'Rate limit reached. Please wait about 30 seconds and try again.'
   }
 
+  if (message.includes('ai provider is not configured correctly')) {
+    return 'AI provider is not configured correctly in deployment settings.'
+  }
+
   if (
     message.includes('ai service is temporarily unavailable') ||
-    message.includes('googlegenerativeai') ||
-    message.includes('model')
+    message.includes('googlegenerativeai')
   ) {
     return 'AI service is temporarily unavailable. Please try again.'
   }
 
-  if (message.includes('message must be')) return raw
+  if (
+    message.includes('unable to extract file content right now') ||
+    message.includes('file parser dependencies are missing') ||
+    message.includes('unsupported file type') ||
+    message.includes('could not extract readable text')
+  ) {
+    return trimmed
+  }
+
+  if (message.includes('message must be')) return trimmed
 
   if (message.includes('valid message and subject are required')) {
     return 'Please enter a valid message and subject.'
   }
 
-  return 'Unable to send message right now. Please try again.'
+  return trimmed || 'Unable to send message right now. Please try again.'
 }
 
 function formatSessionTime(isoDate: string) {
